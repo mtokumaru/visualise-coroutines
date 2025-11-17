@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kotlin Coroutines Visualizer</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Kotlin Coroutines Visualizer</h1>
+            <p class="subtitle">Interactive learning tool for understanding coroutines, dispatchers, and concurrency</p>
+        </header>
+
+        <div class="main-layout">
+            <!-- Control Panel -->
+            <aside class="control-panel">
+                <section class="controls-section">
+                    <h3>Playback Controls</h3>
+                    <div class="button-group">
+                        <button id="play-btn" class="btn btn-primary">Play</button>
+                        <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                        <button id="reset-btn" class="btn btn-secondary">Reset</button>
+                    </div>
+
+                    <div class="control-item">
+                        <label for="speed-control">Speed</label>
+                        <select id="speed-control" class="select">
+                            <option value="0.25">0.25x</option>
+                            <option value="0.5">0.5x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="2">2x</option>
+                            <option value="4">4x</option>
+                        </select>
+                    </div>
+
+                    <div class="control-item">
+                        <button id="step-btn" class="btn btn-secondary">Step Forward</button>
+                    </div>
+                </section>
+
+                <section class="controls-section">
+                    <h3>Scenarios</h3>
+                    <select id="scenario-select" class="select">
+                        <option value="single-launch">1. Single Launch</option>
+                        <option value="multiple-launches">2. Multiple Launches</option>
+                        <option value="launch-vs-async">3. Launch vs Async</option>
+                        <option value="with-context">4. withContext</option>
+                        <option value="delay-vs-sleep">5. delay() vs Thread.sleep()</option>
+                        <option value="structured-concurrency">6. Structured Concurrency</option>
+                        <option value="cancellation">7. Cancellation Propagation</option>
+                    </select>
+                    <button id="load-scenario-btn" class="btn btn-primary">Load Scenario</button>
+                </section>
+
+                <section class="controls-section">
+                    <h3>Statistics</h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Active:</span>
+                            <span id="stat-active" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Suspended:</span>
+                            <span id="stat-suspended" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Completed:</span>
+                            <span id="stat-completed" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Thread Usage:</span>
+                            <span id="stat-threads" class="stat-value">0/0</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="controls-section">
+                    <h3>Legend</h3>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #22c55e;"></span>
+                            <span>Active</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #94a3b8;"></span>
+                            <span>Suspended</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #3b82f6;"></span>
+                            <span>Default Dispatcher</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #f97316;"></span>
+                            <span>IO Dispatcher</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #8b5cf6;"></span>
+                            <span>Main Dispatcher</span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Visualization Canvas -->
+            <main class="visualization-area">
+                <canvas id="viz-canvas"></canvas>
+                <div id="tooltip" class="tooltip hidden"></div>
+            </main>
+
+            <!-- Info Panel -->
+            <aside class="info-panel">
+                <section class="info-section">
+                    <h3>Code Example</h3>
+                    <pre id="code-display" class="code-block"><code>// Select a scenario to see the code</code></pre>
+                </section>
+
+                <section class="info-section">
+                    <h3>Details</h3>
+                    <div id="details-content" class="details">
+                        <p>Hover over elements or select a coroutine to see details</p>
+                    </div>
+                </section>
+
+                <section class="info-section">
+                    <h3>Timeline</h3>
+                    <div class="timeline">
+                        <div id="timeline-slider" class="timeline-slider">
+                            <input type="range" id="timeline-input" min="0" max="100" value="0" step="1">
+                        </div>
+                        <div id="timeline-display" class="timeline-display">
+                            <span>Time: <span id="current-time">0</span>ms</span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/websocket-client.js"></script>
+    <script src="js/visualizer.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

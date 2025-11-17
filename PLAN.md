@@ -16,15 +16,37 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 - Control panel for scenario selection and playback
 - Real-time rendering of coroutine states
 
+## Testing Strategy
+
+**Test as you build**: Each phase should include corresponding tests before moving to the next phase.
+
+### Backend Testing (Kotlin)
+- Unit tests for models, state machines, and business logic
+- Integration tests for WebSocket communication
+- Scenario validation tests
+- Use Kotlin Test and MockK for mocking
+
+### Frontend Testing (JavaScript)
+- Unit tests for utility functions and state management
+- Integration tests for WebSocket client
+- Manual UI testing (automated UI tests optional for later)
+- Use Jest or similar framework
+
+### Test Coverage Goals
+- Backend: 80%+ coverage for simulation engine
+- Critical path: 100% coverage for state transitions and event handling
+- Scenarios: Each scenario should have validation tests
+
 ## Phase 1: Core Infrastructure
 
 ### 1.1 Frontend Setup
-- [ ] Create `src/main/resources/static/` directory structure
+- [x] Create `src/main/resources/static/` directory structure
   - `index.html` - Main UI
   - `css/styles.css` - Styling
   - `js/main.js` - Entry point
   - `js/visualizer.js` - Canvas rendering engine
   - `js/websocket-client.js` - Communication layer
+- [ ] **Tests**: Manual UI verification (backend needed for full testing)
 
 ### 1.2 Backend Infrastructure
 - [ ] Add Ktor plugins:
@@ -37,6 +59,8 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
   - `simulation/models/` - Data models
   - `simulation/scenarios/` - Predefined scenarios
   - `simulation/events/` - Event types
+- [ ] **Tests**: Integration test for static file serving
+- [ ] **Tests**: WebSocket connection test
 
 ## Phase 2: Simulation Engine
 
@@ -46,11 +70,16 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 - [ ] `SimulatedDispatcher` - Dispatcher types (Default, IO, Main, Custom)
 - [ ] `SimulatedCoroutine` - Coroutine with state and parent-child relationships
 - [ ] `ThreadPool` - Manages threads for a dispatcher
+- [ ] **Tests**: Unit tests for each model class
+- [ ] **Tests**: Test model immutability and data validation
 
 ### 2.2 State Machine
 - [ ] Coroutine states: CREATED → ACTIVE → SUSPENDED → RESUMED → COMPLETED/CANCELLED
 - [ ] Thread states: IDLE → RUNNING → BLOCKED → PARKED
 - [ ] Implement state transitions and validation
+- [ ] **Tests**: Test all valid state transitions
+- [ ] **Tests**: Test invalid state transitions throw appropriate errors
+- [ ] **Tests**: Test edge cases (e.g., cancelling completed coroutine)
 
 ### 2.3 Event System
 - [ ] Define event types:
@@ -65,11 +94,17 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
   - `DispatcherQueued`
 - [ ] Event serialization for WebSocket transmission
 - [ ] Event replay capability for step-through debugging
+- [ ] **Tests**: Test event serialization/deserialization
+- [ ] **Tests**: Test event ordering and timestamps
+- [ ] **Tests**: Test event replay produces same state
 
 ### 2.4 Simulation Clock
 - [ ] Virtual time system (can speed up/slow down/pause)
 - [ ] Event scheduler with timestamps
 - [ ] Tick-based execution model
+- [ ] **Tests**: Test clock pause/resume functionality
+- [ ] **Tests**: Test speed multiplier calculations
+- [ ] **Tests**: Test event scheduling and ordering
 
 ## Phase 3: Visualization Engine
 
@@ -105,57 +140,71 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 
 ## Phase 4: Scenarios
 
+**Each scenario implementation must include validation tests**
+
 ### 4.1 Basic Scenarios
 - [ ] **Scenario 1: Single Launch**
   - One coroutine on Default dispatcher
   - Show: Creation → Thread assignment → Execution → Completion
+  - **Tests**: Verify correct state sequence and event order
 
 - [ ] **Scenario 2: Multiple Launches**
   - 10 coroutines launched concurrently
   - Show: Thread pool behavior, queuing when threads full
+  - **Tests**: Verify all coroutines complete, test queue behavior
 
 - [ ] **Scenario 3: Launch vs Async**
   - Side-by-side comparison
   - Show: async returning Deferred, await suspending
+  - **Tests**: Verify Job vs Deferred behavior, test await timing
 
 ### 4.2 Intermediate Scenarios
 - [ ] **Scenario 4: withContext**
   - Coroutine switching from Default to IO dispatcher
   - Show: Suspension, queue on new dispatcher, resume on new thread
+  - **Tests**: Verify dispatcher switch, test thread changes
 
 - [ ] **Scenario 5: delay() vs Thread.sleep()**
   - Two coroutines: one using delay, one using Thread.sleep
   - Show: delay suspends (thread free), sleep blocks (thread occupied)
+  - **Tests**: Verify thread release on delay, blocking on sleep
 
 - [ ] **Scenario 6: Parent-Child Structured Concurrency**
   - Parent launches multiple children
   - Show: Hierarchy, parent waiting for children
+  - **Tests**: Verify parent-child relationships, test completion order
 
 ### 4.3 Advanced Scenarios
 - [ ] **Scenario 7: Cancellation Propagation**
   - Cancel parent, watch cancellation cascade to children
   - Show: CancellationException propagation
+  - **Tests**: Verify all children cancelled, test cancellation order
 
 - [ ] **Scenario 8: Exception Handling**
   - Coroutine throws exception
   - Show: Exception bubbling up, supervisor vs regular scope behavior
+  - **Tests**: Test exception propagation, verify supervisor isolation
 
 - [ ] **Scenario 9: Custom Dispatcher**
   - Single-threaded custom dispatcher
   - Show: All coroutines on one thread, sequential execution
+  - **Tests**: Verify single thread usage, test sequential ordering
 
 - [ ] **Scenario 10: CPU-bound vs IO-bound**
   - Compare workload on Default vs IO dispatcher
   - Show: Thread pool sizing differences
+  - **Tests**: Verify correct dispatcher selection, test pool sizes
 
 ### 4.4 Complex Scenarios
 - [ ] **Scenario 11: Channel Communication**
   - Producer-consumer pattern
   - Show: Data flowing between coroutines
+  - **Tests**: Verify message ordering, test backpressure
 
 - [ ] **Scenario 12: Flow**
   - Cold flow with multiple collectors
   - Show: Lazy execution, backpressure
+  - **Tests**: Verify cold start behavior, test multiple collectors
 
 ## Phase 5: Educational Features
 
@@ -225,40 +274,59 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 ```
 visualise-coroutines/
 ├── src/
-│   └── main/
+│   ├── main/
+│   │   ├── kotlin/visualise/coroutines/
+│   │   │   ├── Application.kt
+│   │   │   ├── Routing.kt
+│   │   │   ├── WebSocketHandler.kt
+│   │   │   └── simulation/
+│   │   │       ├── SimulationEngine.kt
+│   │   │       ├── SimulationClock.kt
+│   │   │       ├── models/
+│   │   │       │   ├── SimulatedCpu.kt
+│   │   │       │   ├── SimulatedThread.kt
+│   │   │       │   ├── SimulatedDispatcher.kt
+│   │   │       │   └── SimulatedCoroutine.kt
+│   │   │       ├── events/
+│   │   │       │   ├── SimulationEvent.kt
+│   │   │       │   └── EventTypes.kt
+│   │   │       └── scenarios/
+│   │   │           ├── Scenario.kt
+│   │   │           ├── BasicScenarios.kt
+│   │   │           └── AdvancedScenarios.kt
+│   │   └── resources/
+│   │       ├── static/
+│   │       │   ├── index.html
+│   │       │   ├── css/
+│   │       │   │   └── styles.css
+│   │       │   └── js/
+│   │       │       ├── main.js
+│   │       │       ├── visualizer.js
+│   │       │       ├── websocket-client.js
+│   │       │       ├── canvas-renderer.js
+│   │       │       ├── controls.js
+│   │       │       └── models.js
+│   │       ├── application.yaml
+│   │       └── logback.xml
+│   └── test/
 │       ├── kotlin/visualise/coroutines/
-│       │   ├── Application.kt
-│       │   ├── Routing.kt
-│       │   ├── WebSocketHandler.kt
-│       │   └── simulation/
-│       │       ├── SimulationEngine.kt
-│       │       ├── SimulationClock.kt
-│       │       ├── models/
-│       │       │   ├── SimulatedCpu.kt
-│       │       │   ├── SimulatedThread.kt
-│       │       │   ├── SimulatedDispatcher.kt
-│       │       │   └── SimulatedCoroutine.kt
-│       │       ├── events/
-│       │       │   ├── SimulationEvent.kt
-│       │       │   └── EventTypes.kt
-│       │       └── scenarios/
-│       │           ├── Scenario.kt
-│       │           ├── BasicScenarios.kt
-│       │           └── AdvancedScenarios.kt
+│       │   ├── simulation/
+│       │   │   ├── models/
+│       │   │   │   ├── SimulatedCpuTest.kt
+│       │   │   │   ├── SimulatedThreadTest.kt
+│       │   │   │   ├── SimulatedDispatcherTest.kt
+│       │   │   │   └── SimulatedCoroutineTest.kt
+│       │   │   ├── StateMachineTest.kt
+│       │   │   ├── SimulationClockTest.kt
+│       │   │   ├── events/
+│       │   │   │   └── EventSystemTest.kt
+│       │   │   └── scenarios/
+│       │   │       ├── BasicScenariosTest.kt
+│       │   │       ├── IntermediateScenariosTest.kt
+│       │   │       └── AdvancedScenariosTest.kt
+│       │   └── WebSocketTest.kt
 │       └── resources/
-│           ├── static/
-│           │   ├── index.html
-│           │   ├── css/
-│           │   │   └── styles.css
-│           │   └── js/
-│           │       ├── main.js
-│           │       ├── visualizer.js
-│           │       ├── websocket-client.js
-│           │       ├── canvas-renderer.js
-│           │       ├── controls.js
-│           │       └── models.js
-│           ├── application.yaml
-│           └── logback.xml
+│           └── test-scenarios/
 ├── build.gradle.kts
 └── PLAN.md (this file)
 ```
@@ -274,7 +342,10 @@ visualise-coroutines/
 ## Notes
 - Keep simulation simple initially, add complexity gradually
 - Focus on clarity of visualization over performance early on
+- **Write tests alongside code - never defer testing to later**
 - Test each scenario thoroughly before moving to next
+- Run tests before committing any code
+- Use TDD approach for core simulation logic (write test first, then implementation)
 - Consider recording simulation runs for playback
 - Future: Could add "challenge mode" where users predict outcomes
 
