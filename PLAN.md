@@ -74,12 +74,12 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 - [x] **Tests**: Test model immutability and data validation
 
 ### 2.2 State Machine
-- [ ] Coroutine states: CREATED → ACTIVE → SUSPENDED → RESUMED → COMPLETED/CANCELLED
-- [ ] Thread states: IDLE → RUNNING → BLOCKED → PARKED
-- [ ] Implement state transitions and validation
-- [ ] **Tests**: Test all valid state transitions
-- [ ] **Tests**: Test invalid state transitions throw appropriate errors
-- [ ] **Tests**: Test edge cases (e.g., cancelling completed coroutine)
+- [x] Coroutine states: CREATED → ACTIVE → SUSPENDED → RESUMED → COMPLETED/CANCELLED
+- [x] Thread states: IDLE → RUNNING → WAITING → PARKED → TERMINATED
+- [x] Implement state transitions and validation
+- [x] **Tests**: Test all valid state transitions (43 tests)
+- [x] **Tests**: Test invalid state transitions throw appropriate errors
+- [x] **Tests**: Test edge cases (e.g., cancelling completed coroutine, terminal states)
 
 ### 2.3 Event System
 - [ ] Define event types:
