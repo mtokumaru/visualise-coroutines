@@ -65,13 +65,13 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 ## Phase 2: Simulation Engine
 
 ### 2.1 Core Models
-- [ ] `SimulatedCpu` - Represents CPU cores (e.g., 4 or 8 cores)
-- [ ] `SimulatedThread` - Thread with state (RUNNING, WAITING, PARKED, TERMINATED)
-- [ ] `SimulatedDispatcher` - Dispatcher types (Default, IO, Main, Custom)
-- [ ] `SimulatedCoroutine` - Coroutine with state and parent-child relationships
-- [ ] `ThreadPool` - Manages threads for a dispatcher
-- [ ] **Tests**: Unit tests for each model class
-- [ ] **Tests**: Test model immutability and data validation
+- [x] `SimulatedCpu` - Represents CPU cores (e.g., 4 or 8 cores)
+- [x] `SimulatedThread` - Thread with state (RUNNING, WAITING, PARKED, TERMINATED)
+- [x] `SimulatedDispatcher` - Dispatcher types (Default, IO, Main, Custom)
+- [x] `SimulatedCoroutine` - Coroutine with state and parent-child relationships
+- [ ] `ThreadPool` - Manages threads for a dispatcher (deferred - using lists in dispatcher)
+- [x] **Tests**: Unit tests for each model class (40+ tests total)
+- [x] **Tests**: Test model immutability and data validation
 
 ### 2.2 State Machine
 - [ ] Coroutine states: CREATED → ACTIVE → SUSPENDED → RESUMED → COMPLETED/CANCELLED
