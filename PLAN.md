@@ -49,18 +49,18 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 - [ ] **Tests**: Manual UI verification (backend needed for full testing)
 
 ### 1.2 Backend Infrastructure
-- [ ] Add Ktor plugins:
+- [x] Add Ktor plugins:
   - Static content serving
   - WebSockets support
   - CORS (for development)
   - Content negotiation (JSON)
-- [ ] Create simulation engine package structure:
+- [x] Create simulation engine package structure:
   - `simulation/` - Core simulation engine
   - `simulation/models/` - Data models
   - `simulation/scenarios/` - Predefined scenarios
   - `simulation/events/` - Event types
-- [ ] **Tests**: Integration test for static file serving
-- [ ] **Tests**: WebSocket connection test
+- [x] **Tests**: Integration test for static file serving
+- [x] **Tests**: WebSocket connection test
 
 ## Phase 2: Simulation Engine
 

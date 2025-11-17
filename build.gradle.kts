@@ -20,9 +20,24 @@ dependencies {
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-config-yaml")
 
+    // WebSockets
+    implementation("io.ktor:ktor-server-websockets")
+
+    // Static content
+    implementation("io.ktor:ktor-server-default-headers")
+    implementation("io.ktor:ktor-server-compression")
+
+    // CORS
+    implementation("io.ktor:ktor-server-cors")
+
+    // Content negotiation and serialization
+    implementation("io.ktor:ktor-server-content-negotiation")
+    implementation("io.ktor:ktor-serialization-kotlinx-json")
+
     // Testing
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+    testImplementation("io.ktor:ktor-client-websockets")
 }
