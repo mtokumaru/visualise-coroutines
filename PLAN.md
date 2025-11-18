@@ -252,6 +252,35 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 - [ ] Environment configuration
 - [ ] Deployment instructions (local, cloud)
 
+## Real Coroutine Usage in Backend
+
+### SimulationRunner (Phase 2+)
+The backend uses **real Kotlin coroutines** for simulation playback and event streaming:
+
+1. **SimulationRunner** - Coroutine-based playback engine
+   - Uses `launch` to run simulations in background
+   - `delay()` for timing control (scaled by speed multiplier)
+   - `Job` for cancellation (pause functionality)
+   - Properly structured with `CoroutineScope(Dispatchers.Default)`
+
+2. **SharedFlow for Event Streaming**
+   - `MutableSharedFlow<SimulationEvent>` for reactive event broadcasting
+   - Multiple WebSocket clients can collect independently
+   - Hot flow - events broadcast to all active collectors
+
+3. **WebSocket Integration**
+   - Per-connection `SimulationRunner` instance
+   - `launch` for event broadcaster coroutine
+   - `launch` for simulation playback
+   - Structured concurrency - cancels on disconnect
+
+4. **Key Coroutine Patterns Used:**
+   - `suspend fun play()` - Suspending simulation execution
+   - `Flow.collect {}` - Reactive event consumption
+   - `launch {}` - Fire-and-forget background work
+   - `Job.cancel()` - Clean shutdown
+   - `delay()` with speed multiplication
+
 ## Technical Decisions
 
 ### Simulation Approach Rationale

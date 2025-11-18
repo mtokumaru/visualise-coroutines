@@ -6,9 +6,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
+import visualise.coroutines.simulation.SimulationRunner
+import visualise.coroutines.simulation.scenarios.*
 
 fun Application.configureRouting() {
     routing {
@@ -20,6 +24,7 @@ fun Application.configureRouting() {
         // WebSocket endpoint for simulation control
         webSocket("/simulation") {
             val logger = call.application.log
+            val runner = SimulationRunner()
 
             // Send welcome message
             val welcomeMessage = mapOf(
@@ -29,15 +34,30 @@ fun Application.configureRouting() {
             send(Frame.Text(Json.encodeToString(welcomeMessage)))
 
             try {
+                // Launch event broadcaster
+                val eventBroadcaster = launch {
+                    runner.events.collect { event ->
+                        val eventMessage = mapOf(
+                            "type" to "SIMULATION_EVENT",
+                            "event" to event
+                        )
+                        send(Frame.Text(Json.encodeToString(eventMessage)))
+                    }
+                }
+
+                // Handle incoming commands
                 for (frame in incoming) {
                     if (frame is Frame.Text) {
                         val text = frame.readText()
-                        handleSimulationMessage(text, logger)
+                        handleSimulationMessage(text, logger, runner, this)
                     }
                 }
+
+                eventBroadcaster.cancel()
             } catch (e: Exception) {
                 logger.error("WebSocket error: ${e.localizedMessage}")
             } finally {
+                runner.pause()
                 logger.info("WebSocket connection closed")
             }
         }
@@ -49,39 +69,64 @@ fun Application.configureRouting() {
     }
 }
 
-suspend fun DefaultWebSocketServerSession.handleSimulationMessage(message: String, logger: org.slf4j.Logger) {
+suspend fun handleSimulationMessage(
+    message: String,
+    logger: org.slf4j.Logger,
+    runner: SimulationRunner,
+    session: DefaultWebSocketServerSession
+) {
     try {
         val json = Json.decodeFromString<Map<String, Any?>>(message)
         val messageType = json["type"] as? String
 
         when (messageType) {
             "PLAY" -> {
-                // TODO: Start simulation
                 logger.info("Play command received")
+                // Play in background
+                session.launch {
+                    try {
+                        runner.play(runner.loadedScenario ?: SingleLaunchScenario())
+                    } catch (e: Exception) {
+                        logger.error("Error playing simulation: ${e.message}")
+                    }
+                }
             }
             "PAUSE" -> {
-                // TODO: Pause simulation
                 logger.info("Pause command received")
+                runner.pause()
             }
             "RESET" -> {
-                // TODO: Reset simulation
                 logger.info("Reset command received")
+                runner.reset()
             }
             "STEP" -> {
-                // TODO: Step simulation
                 logger.info("Step command received")
+                session.launch {
+                    runner.step()
+                }
             }
             "SET_SPEED" -> {
-                val speed = json["speed"]
+                val speed = (json["speed"] as? Number)?.toDouble() ?: 1.0
                 logger.info("Set speed command received: $speed")
+                runner.setSpeed(speed)
             }
             "LOAD_SCENARIO" -> {
-                val scenario = json["scenario"]
-                logger.info("Load scenario command received: $scenario")
+                val scenarioName = json["scenario"] as? String
+                logger.info("Load scenario command received: $scenarioName")
+
+                val scenario = when (scenarioName) {
+                    "single-launch" -> SingleLaunchScenario()
+                    "multiple-launches" -> MultipleLaunchesScenario()
+                    "launch-vs-async" -> LaunchVsAsyncScenario()
+                    else -> SingleLaunchScenario()
+                }
+
+                runner.load(scenario)
             }
             "SEEK_TIME" -> {
                 val time = json["time"]
                 logger.info("Seek time command received: $time")
+                // TODO: Implement seek functionality
             }
             else -> {
                 logger.warn("Unknown message type: $messageType")
