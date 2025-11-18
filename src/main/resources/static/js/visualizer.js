@@ -14,6 +14,10 @@ class Visualizer {
         this.dispatchers = [];
         this.coroutines = [];
 
+        // Animation state
+        this.animations = [];
+        this.lastFrameTime = performance.now();
+
         // Layout constants
         this.layout = {
             padding: 20,
@@ -105,7 +109,59 @@ class Visualizer {
         requestAnimationFrame(render);
     }
 
+    // Animation helpers
+    easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+
+    easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+
+    /**
+     * Create an animation
+     * @param target - The object to animate
+     * @param property - Property name to animate
+     * @param from - Starting value
+     * @param to - Ending value
+     * @param duration - Duration in milliseconds
+     * @param easing - Easing function (optional)
+     */
+    animate(target, property, from, to, duration, easing = this.easeOutCubic.bind(this)) {
+        const animation = {
+            target,
+            property,
+            from,
+            to,
+            duration,
+            elapsed: 0,
+            easing
+        };
+        this.animations.push(animation);
+    }
+
+    updateAnimations(deltaTime) {
+        this.animations = this.animations.filter(animation => {
+            animation.elapsed += deltaTime;
+            const progress = Math.min(animation.elapsed / animation.duration, 1.0);
+            const easedProgress = animation.easing(progress);
+
+            const value = animation.from + (animation.to - animation.from) * easedProgress;
+            animation.target[animation.property] = value;
+
+            return progress < 1.0; // Keep animation if not complete
+        });
+    }
+
     render() {
+        // Calculate delta time for animations
+        const now = performance.now();
+        const deltaTime = now - this.lastFrameTime;
+        this.lastFrameTime = now;
+
+        // Update animations
+        this.updateAnimations(deltaTime);
+
         // Clear canvas
         this.ctx.fillStyle = this.colors.background;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -179,9 +235,12 @@ class Visualizer {
         this.threads.forEach(thread => {
             const color = this.getDispatcherColor(thread.dispatcherType);
 
+            // Use animated opacity with fallback
+            const threadOpacity = thread.threadOpacity !== undefined ? thread.threadOpacity : (thread.active ? 0.8 : 0.3);
+
             // Draw thread box
             this.ctx.fillStyle = color;
-            this.ctx.globalAlpha = thread.active ? 0.8 : 0.3;
+            this.ctx.globalAlpha = threadOpacity;
             this.ctx.fillRect(thread.x, thread.y, thread.width, thread.height);
             this.ctx.globalAlpha = 1.0;
 
@@ -206,19 +265,24 @@ class Visualizer {
             const color = this.getCoroutineColor(coroutine.state);
             const size = this.layout.coroutineSize;
 
+            // Use animated properties with fallbacks
+            const opacity = coroutine.opacity !== undefined ? coroutine.opacity : 1.0;
+            const scale = coroutine.scale !== undefined ? coroutine.scale : 1.0;
+
             // Draw coroutine circle
+            this.ctx.save();
+            this.ctx.globalAlpha = opacity * (coroutine.state === 'SUSPENDED' ? 0.5 : 0.9);
+
             this.ctx.beginPath();
             this.ctx.arc(
                 coroutine.x + size / 2,
                 coroutine.y + size / 2,
-                size / 2,
+                (size / 2) * scale,
                 0,
                 Math.PI * 2
             );
             this.ctx.fillStyle = color;
-            this.ctx.globalAlpha = coroutine.state === 'SUSPENDED' ? 0.5 : 0.9;
             this.ctx.fill();
-            this.ctx.globalAlpha = 1.0;
 
             this.ctx.strokeStyle = this.colors.border;
             this.ctx.lineWidth = 2;
@@ -234,6 +298,8 @@ class Visualizer {
                 coroutine.x + size / 2,
                 coroutine.y + size / 2
             );
+
+            this.ctx.restore();
         });
     }
 
@@ -287,35 +353,103 @@ class Visualizer {
 
     processEvent(event) {
         // Handle simulation events and update visualization state
-        switch (event.type) {
-            case 'COROUTINE_CREATED':
-                this.addCoroutine(event.coroutine);
-                break;
-            case 'COROUTINE_STARTED':
+        const eventType = event.type || event.constructor.name;
+
+        console.log('Processing event:', eventType, event);
+
+        if (eventType === 'CoroutineCreated' || event.coroutineId !== undefined) {
+            if (event.coroutineId && event.dispatcher) {
+                // CoroutineCreated
+                this.addCoroutine({
+                    id: event.coroutineId,
+                    dispatcher: event.dispatcher,
+                    parentId: event.parentId
+                });
+            } else if (eventType === 'CoroutineStarted') {
                 this.updateCoroutine(event.coroutineId, { state: 'ACTIVE' });
-                break;
-            case 'COROUTINE_SUSPENDED':
+            } else if (eventType === 'CoroutineSuspended') {
                 this.updateCoroutine(event.coroutineId, { state: 'SUSPENDED' });
-                break;
-            case 'COROUTINE_COMPLETED':
-                this.removeCoroutine(event.coroutineId);
-                break;
-            case 'THREAD_ASSIGNED':
+            } else if (eventType === 'CoroutineResumed') {
+                this.updateCoroutine(event.coroutineId, { state: 'RESUMED' });
+            } else if (eventType === 'CoroutineCompleted') {
+                this.updateCoroutine(event.coroutineId, { state: 'COMPLETED' });
+                // Fade out and remove after delay
+                setTimeout(() => this.removeCoroutine(event.coroutineId), 1000);
+            } else if (eventType === 'CoroutineCancelled') {
+                this.updateCoroutine(event.coroutineId, { state: 'CANCELLED' });
+                setTimeout(() => this.removeCoroutine(event.coroutineId), 1000);
+            } else if (eventType === 'ThreadAssigned') {
                 this.assignThread(event.coroutineId, event.threadId);
-                break;
-            default:
-                console.log('Unknown event type:', event.type);
+                this.ensureThreadExists(event.threadId);
+            } else if (eventType === 'ThreadReleased') {
+                this.releaseThread(event.coroutineId, event.threadId);
+            } else if (eventType === 'DispatcherQueued') {
+                // Coroutine queued on dispatcher
+                this.updateCoroutine(event.coroutineId, { queued: true });
+            }
+        }
+    }
+
+    ensureThreadExists(threadId) {
+        const existing = this.threads.find(t => t.id === threadId);
+        if (!existing) {
+            const newThread = {
+                id: threadId,
+                dispatcherType: 'DEFAULT',
+                x: 100 + (threadId * 140),
+                y: this.canvas.height - 200,
+                width: this.layout.threadWidth,
+                height: this.layout.threadHeight,
+                active: true,
+                state: 'RUNNING',
+                threadOpacity: 0.3
+            };
+            this.threads.push(newThread);
+
+            // Animate thread becoming active
+            this.animate(newThread, 'threadOpacity', 0.3, 0.8, 300);
+        } else {
+            existing.active = true;
+            existing.state = 'RUNNING';
+
+            // Animate to active state
+            const currentOpacity = existing.threadOpacity !== undefined ? existing.threadOpacity : 0.3;
+            this.animate(existing, 'threadOpacity', currentOpacity, 0.8, 300);
+        }
+    }
+
+    releaseThread(coroutineId, threadId) {
+        const thread = this.threads.find(t => t.id === threadId);
+        if (thread) {
+            thread.active = false;
+            thread.state = 'IDLE';
+
+            // Animate thread becoming idle
+            const currentOpacity = thread.threadOpacity !== undefined ? thread.threadOpacity : 0.8;
+            this.animate(thread, 'threadOpacity', currentOpacity, 0.3, 300);
+        }
+
+        const coroutine = this.coroutines.find(c => c.id === coroutineId);
+        if (coroutine) {
+            coroutine.threadId = null;
         }
     }
 
     addCoroutine(coroutine) {
-        this.coroutines.push({
+        const newCoroutine = {
             id: coroutine.id,
             x: Math.random() * (this.canvas.width - 100) + 50,
             y: Math.random() * 200 + 50,
             state: 'CREATED',
-            threadId: null
-        });
+            threadId: null,
+            opacity: 0.0,
+            scale: 0.3
+        };
+        this.coroutines.push(newCoroutine);
+
+        // Animate creation: fade in and scale up
+        this.animate(newCoroutine, 'opacity', 0.0, 1.0, 400);
+        this.animate(newCoroutine, 'scale', 0.3, 1.0, 400);
     }
 
     updateCoroutine(id, updates) {
@@ -326,13 +460,36 @@ class Visualizer {
     }
 
     removeCoroutine(id) {
-        this.coroutines = this.coroutines.filter(c => c.id !== id);
+        const coroutine = this.coroutines.find(c => c.id === id);
+        if (coroutine) {
+            // Animate fade out before removing
+            coroutine.opacity = coroutine.opacity !== undefined ? coroutine.opacity : 1.0;
+            coroutine.scale = coroutine.scale !== undefined ? coroutine.scale : 1.0;
+
+            this.animate(coroutine, 'opacity', coroutine.opacity, 0.0, 300);
+            this.animate(coroutine, 'scale', coroutine.scale, 0.5, 300);
+
+            // Actually remove after animation completes
+            setTimeout(() => {
+                this.coroutines = this.coroutines.filter(c => c.id !== id);
+            }, 350);
+        }
     }
 
     assignThread(coroutineId, threadId) {
         const coroutine = this.coroutines.find(c => c.id === coroutineId);
         if (coroutine) {
             coroutine.threadId = threadId;
+
+            // Animate movement to thread
+            const thread = this.threads.find(t => t.id === threadId);
+            if (thread) {
+                const targetX = thread.x + thread.width / 2 - this.layout.coroutineSize / 2;
+                const targetY = thread.y - this.layout.coroutineSize - 10;
+
+                this.animate(coroutine, 'x', coroutine.x, targetX, 500, this.easeInOutQuad.bind(this));
+                this.animate(coroutine, 'y', coroutine.y, targetY, 500, this.easeInOutQuad.bind(this));
+            }
         }
     }
 

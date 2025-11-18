@@ -6,11 +6,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 import visualise.coroutines.simulation.SimulationRunner
 import visualise.coroutines.simulation.scenarios.*
 
@@ -39,7 +36,7 @@ fun Application.configureRouting() {
                     runner.events.collect { event ->
                         val eventMessage = mapOf(
                             "type" to "SIMULATION_EVENT",
-                            "event" to event
+                            "event" to Json.encodeToString(event)
                         )
                         send(Frame.Text(Json.encodeToString(eventMessage)))
                     }
@@ -69,17 +66,15 @@ fun Application.configureRouting() {
     }
 }
 
-suspend fun handleSimulationMessage(
+fun handleSimulationMessage(
     message: String,
     logger: org.slf4j.Logger,
     runner: SimulationRunner,
     session: DefaultWebSocketServerSession
 ) {
     try {
-        val json = Json.decodeFromString<Map<String, Any?>>(message)
-        val messageType = json["type"] as? String
-
-        when (messageType) {
+        val json = Json.decodeFromString<Map<String, String>>(message)
+        when (val messageType = json["type"]) {
             "PLAY" -> {
                 logger.info("Play command received")
                 // Play in background
@@ -106,12 +101,12 @@ suspend fun handleSimulationMessage(
                 }
             }
             "SET_SPEED" -> {
-                val speed = (json["speed"] as? Number)?.toDouble() ?: 1.0
+                val speed = (json["speed"]?.toDouble()) ?: 1.0
                 logger.info("Set speed command received: $speed")
                 runner.setSpeed(speed)
             }
             "LOAD_SCENARIO" -> {
-                val scenarioName = json["scenario"] as? String
+                val scenarioName = json["scenario"]
                 logger.info("Load scenario command received: $scenarioName")
 
                 val scenario = when (scenarioName) {
@@ -133,6 +128,6 @@ suspend fun handleSimulationMessage(
             }
         }
     } catch (e: Exception) {
-        logger.error("Error handling message: ${e.localizedMessage}")
+        logger.error("Error handling message: ${e.localizedMessage}", e)
     }
 }

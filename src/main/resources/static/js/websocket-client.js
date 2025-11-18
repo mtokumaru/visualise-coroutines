@@ -72,8 +72,16 @@ class WebSocketClient {
             const message = JSON.parse(data);
 
             switch (message.type) {
+                case 'CONNECTED':
+                    console.log('Server says:', message.message);
+                    if (this.onConnectedCallback) {
+                        this.onConnectedCallback();
+                    }
+                    break;
+
                 case 'SIMULATION_EVENT':
-                    if (this.onEventCallback) {
+                    if (this.onEventCallback && message.event) {
+                        // The event is nested under message.event
                         this.onEventCallback(message.event);
                     }
                     break;
@@ -89,10 +97,10 @@ class WebSocketClient {
                     break;
 
                 default:
-                    console.log('Unknown message type:', message.type);
+                    console.log('Received message:', message.type, message);
             }
         } catch (error) {
-            console.error('Failed to parse message:', error);
+            console.error('Failed to parse message:', error, data);
         }
     }
 

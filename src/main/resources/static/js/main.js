@@ -89,7 +89,7 @@ class CoroutinesVisualizer {
 
         // Speed control
         this.elements.speedControl.addEventListener('change', (e) => {
-            this.currentSpeed = parseFloat(e.target.value);
+            this.currentSpeed = e.target.value;
             this.wsClient.send({
                 type: 'SET_SPEED',
                 speed: this.currentSpeed
@@ -107,7 +107,7 @@ class CoroutinesVisualizer {
 
         // Timeline scrubbing
         this.elements.timelineInput.addEventListener('input', (e) => {
-            const time = parseInt(e.target.value);
+            const time = e.target.value; // ensure messages are sent as strings
             this.wsClient.send({
                 type: 'SEEK_TIME',
                 time: time
@@ -168,10 +168,40 @@ class CoroutinesVisualizer {
         this.visualizer.processEvent(event);
 
         // Update timeline
-        if (event.timestamp) {
+        if (event.timestamp !== undefined) {
             this.elements.currentTime.textContent = event.timestamp;
             this.elements.timelineInput.value = event.timestamp;
+            this.elements.timelineInput.max = Math.max(this.elements.timelineInput.max, event.timestamp);
         }
+
+        // Update statistics based on event type
+        const eventType = event.type || '';
+        if (eventType.includes('Created')) {
+            this.updateStatisticsFromVisualizer();
+        } else if (eventType.includes('Completed') || eventType.includes('Cancelled')) {
+            this.updateStatisticsFromVisualizer();
+        } else if (eventType.includes('Started') || eventType.includes('Suspended')) {
+            this.updateStatisticsFromVisualizer();
+        }
+    }
+
+    updateStatisticsFromVisualizer() {
+        const coroutines = this.visualizer.coroutines;
+        const threads = this.visualizer.threads;
+
+        const active = coroutines.filter(c => c.state === 'ACTIVE' || c.state === 'RESUMED').length;
+        const suspended = coroutines.filter(c => c.state === 'SUSPENDED').length;
+        const completed = coroutines.filter(c => c.state === 'COMPLETED' || c.state === 'CANCELLED').length;
+        const activeThreads = threads.filter(t => t.active).length;
+        const totalThreads = threads.length;
+
+        this.updateStatistics({
+            active,
+            suspended,
+            completed,
+            activeThreads,
+            totalThreads
+        });
     }
 
     updateStatistics(state) {
