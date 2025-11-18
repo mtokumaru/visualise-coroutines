@@ -99,12 +99,12 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 - [x] **Tests**: Test event replay produces same state (27 tests for EventRecorder)
 
 ### 2.4 Simulation Clock
-- [ ] Virtual time system (can speed up/slow down/pause)
-- [ ] Event scheduler with timestamps
-- [ ] Tick-based execution model
-- [ ] **Tests**: Test clock pause/resume functionality
-- [ ] **Tests**: Test speed multiplier calculations
-- [ ] **Tests**: Test event scheduling and ordering
+- [x] Virtual time system (can speed up/slow down/pause)
+- [x] Event scheduler with timestamps
+- [x] Tick-based execution model
+- [x] **Tests**: Test clock pause/resume functionality (36 tests)
+- [x] **Tests**: Test speed multiplier calculations
+- [x] **Tests**: Test event scheduling and ordering
 
 ## Phase 3: Visualization Engine
 
