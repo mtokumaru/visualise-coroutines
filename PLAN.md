@@ -143,20 +143,20 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 **Each scenario implementation must include validation tests**
 
 ### 4.1 Basic Scenarios
-- [ ] **Scenario 1: Single Launch**
+- [x] **Scenario 1: Single Launch**
   - One coroutine on Default dispatcher
   - Show: Creation → Thread assignment → Execution → Completion
-  - **Tests**: Verify correct state sequence and event order
+  - **Tests**: Verify correct state sequence and event order (7 tests)
 
-- [ ] **Scenario 2: Multiple Launches**
+- [x] **Scenario 2: Multiple Launches**
   - 10 coroutines launched concurrently
   - Show: Thread pool behavior, queuing when threads full
-  - **Tests**: Verify all coroutines complete, test queue behavior
+  - **Tests**: Verify all coroutines complete, test queue behavior (6 tests)
 
-- [ ] **Scenario 3: Launch vs Async**
+- [x] **Scenario 3: Launch vs Async**
   - Side-by-side comparison
   - Show: async returning Deferred, await suspending
-  - **Tests**: Verify Job vs Deferred behavior, test await timing
+  - **Tests**: Verify Job vs Deferred behavior, test await timing (5 tests)
 
 ### 4.2 Intermediate Scenarios
 - [ ] **Scenario 4: withContext**
