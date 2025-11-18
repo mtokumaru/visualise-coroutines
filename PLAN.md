@@ -82,7 +82,7 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
 - [x] **Tests**: Test edge cases (e.g., cancelling completed coroutine, terminal states)
 
 ### 2.3 Event System
-- [ ] Define event types:
+- [x] Define event types:
   - `CoroutineCreated`
   - `CoroutineStarted`
   - `CoroutineSuspended`
@@ -92,11 +92,11 @@ Build an interactive web-based tool to visualize Kotlin coroutines concepts incl
   - `ThreadAssigned`
   - `ThreadReleased`
   - `DispatcherQueued`
-- [ ] Event serialization for WebSocket transmission
-- [ ] Event replay capability for step-through debugging
-- [ ] **Tests**: Test event serialization/deserialization
-- [ ] **Tests**: Test event ordering and timestamps
-- [ ] **Tests**: Test event replay produces same state
+- [x] Event serialization for WebSocket transmission (JSON with kotlinx.serialization)
+- [x] Event replay capability for step-through debugging (EventRecorder)
+- [x] **Tests**: Test event serialization/deserialization (22 tests)
+- [x] **Tests**: Test event ordering and timestamps
+- [x] **Tests**: Test event replay produces same state (27 tests for EventRecorder)
 
 ### 2.4 Simulation Clock
 - [ ] Virtual time system (can speed up/slow down/pause)
